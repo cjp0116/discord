@@ -5,7 +5,6 @@ import { SessionGuard } from "@/components/auth/session-guard"
 export default async function HomePage() {
 
   return (
-  
       <div className="min-h-screen bg-gradient-primary flex items-center justify-center relative overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 to-pink-600/20"></div>

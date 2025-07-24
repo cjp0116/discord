@@ -48,25 +48,25 @@ export function useWebSocketMessages(channelId: string) {
     addReaction: wsAddReaction
   } = useWebSocket({
     channelId,
-    onMessageReceived: (message: ChatMessage) => {
+    onMessageReceived: useCallback((message: ChatMessage) => {
       setMessages(prev => [...prev, message as Message])
-    },
-    onMessageEdited: (message: ChatMessage) => {
+    }, []),
+    onMessageEdited: useCallback((message: ChatMessage) => {
       setMessages(prev => prev.map(msg =>
         msg.id === message.id ? { ...msg, ...message } : msg
       ))
-    },
-    onMessageDeleted: (messageId: string) => {
+    }, []),
+    onMessageDeleted: useCallback((messageId: string) => {
       setMessages(prev => prev.filter(msg => msg.id !== messageId))
-    },
-    onReactionUpdated: (messageId: string, reactions: any[]) => {
+    }, []),
+    onReactionUpdated: useCallback((messageId: string, reactions: any[]) => {
       setMessages(prev => prev.map(msg =>
         msg.id === messageId ? { ...msg, reactions } : msg
       ))
-    },
-    onError: (error: string) => {
+    }, []),
+    onError: useCallback((error: string) => {
       setError(error)
-    }
+    }, [])
   })
 
   // Stable query function for initial load

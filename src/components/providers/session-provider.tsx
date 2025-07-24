@@ -6,7 +6,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import { createClient } from "@/lib/supabase/client"
 import { withRetry, isRateLimitError } from "@/lib/utils/retry"
 import { throttle } from "@/lib/utils/debounce"
-import { debounce } from "@/lib/utils/debounce"
+// import { debounce } from "@/lib/utils/debounce"
 import type { User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
 
@@ -304,20 +304,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }),
     [user, profile, loading, error, refreshSession, signOut],
   )
-
-  // Debug: Log context value changes in development
-  // useEffect(() => {
-  //   if (process.env.NODE_ENV === 'development') {
-  //     console.log('Session context value changed', {
-  //       userId: user?.id,
-  //       profileId: profile?.id,
-  //       loading,
-  //       hasError: !!error,
-  //       timestamp: new Date().toISOString(),
-  //       stack: new Error().stack?.split('\n').slice(1, 4).join('\n')
-  //     })
-  //   }
-  // }, [user?.id, profile?.id, loading, error])
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
 }

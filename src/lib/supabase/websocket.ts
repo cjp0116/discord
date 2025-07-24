@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-export function createWebSocketClient(accessToken?: string) {
+export async function createWebSocketClient(accessToken?: string) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -10,15 +10,19 @@ export function createWebSocketClient(accessToken?: string) {
     )
   }
 
-  const client = createClient(supabaseUrl, supabaseAnonKey)
+  console.log('Creating WebSocket client with token length:', accessToken?.length || 0)
 
-  // If access token is provided, set it for this session
-  if (accessToken) {
-    client.auth.setSession({
-      access_token: accessToken,
-      refresh_token: ''
-    })
-  }
+  const client = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    },
+    global: {
+      headers: accessToken ? {
+        Authorization: `Bearer ${accessToken}`
+      } : {}
+    }
+  })
 
   return client
 } 

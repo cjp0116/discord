@@ -1,5 +1,5 @@
 import { Server as SocketIOServer } from 'socket.io'
-import { createClient } from '@/lib/supabase/server'
+import { createWebSocketClient } from '@/lib/supabase/websocket'
 
 export interface ChatMessage {
   id: string
@@ -52,11 +52,16 @@ class WebSocketServer {
       // Authenticate user
       socket.on('authenticate', async (token: string) => {
         try {
-          // Verify the user session
-          const supabase = await createClient()
+          console.log('WebSocket auth attempt with token length:', token?.length || 0)
+
+          // Verify the user session using the access token
+          const supabase = await createWebSocketClient(token)
           const { data: { user }, error } = await supabase.auth.getUser()
-          
+
+          console.log('Auth result:', { user: user?.id, error: error?.message })
+
           if (error || !user) {
+            console.log('Auth failed:', error?.message || 'No user')
             socket.emit('auth_error', 'Invalid authentication')
             return
           }
@@ -70,6 +75,7 @@ class WebSocketServer {
           // Store user info in socket
           socket.data.userId = user.id
           socket.data.authenticated = true
+          socket.data.token = token
 
           socket.emit('authenticated', { userId: user.id })
           console.log(`User authenticated: ${user.id}`)
@@ -88,10 +94,10 @@ class WebSocketServer {
 
         try {
           // Verify user has access to this channel
-          const supabase = await createClient()
+          const supabase = await createWebSocketClient(socket.data.token)
           const { data: channel } = await supabase
             .from('channels')
-            .select('id')
+            .select('id, server_id')
             .eq('id', channelId)
             .single()
 
@@ -114,7 +120,7 @@ class WebSocketServer {
           }
 
           socket.join(`channel:${channelId}`)
-          
+
           // Store channel socket mapping
           if (!this.channelSockets.has(channelId)) {
             this.channelSockets.set(channelId, new Set())
@@ -132,7 +138,7 @@ class WebSocketServer {
       // Leave a channel
       socket.on('leave_channel', (channelId: string) => {
         socket.leave(`channel:${channelId}`)
-        
+
         // Remove from channel mapping
         this.channelSockets.get(channelId)?.delete(socket.id)
         if (this.channelSockets.get(channelId)?.size === 0) {
@@ -151,8 +157,8 @@ class WebSocketServer {
         }
 
         try {
-          const supabase = await createClient()
-          
+          const supabase = await createWebSocketClient(socket.data.token)
+
           // Insert message into database
           const { data: message, error } = await supabase
             .from('messages')
@@ -194,8 +200,8 @@ class WebSocketServer {
         }
 
         try {
-          const supabase = await createClient()
-          
+          const supabase = await createWebSocketClient(socket.data.token)
+
           // Verify user owns the message
           const { data: message } = await supabase
             .from('messages')
@@ -249,8 +255,8 @@ class WebSocketServer {
         }
 
         try {
-          const supabase = await createClient()
-          
+          const supabase = await createWebSocketClient(socket.data.token)
+
           // Verify user owns the message
           const { data: message } = await supabase
             .from('messages')
@@ -294,8 +300,8 @@ class WebSocketServer {
         }
 
         try {
-          const supabase = await createClient()
-          
+          const supabase = await createWebSocketClient(socket.data.token)
+
           // Check if user already reacted
           const { data: existingReaction } = await supabase
             .from('message_reactions')
@@ -369,7 +375,7 @@ class WebSocketServer {
       // Handle disconnection
       socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`)
-        
+
         // Clean up user socket mapping
         if (socket.data.userId) {
           this.userSockets.get(socket.data.userId)?.delete(socket.id)
@@ -400,14 +406,14 @@ class WebSocketServer {
   getChannelUsers(channelId: string): string[] {
     const socketIds = this.channelSockets.get(channelId) || new Set()
     const userIds: string[] = []
-    
+
     for (const socketId of socketIds) {
       const socket = this.io?.sockets.sockets.get(socketId)
       if (socket?.data.userId) {
         userIds.push(socket.data.userId)
       }
     }
-    
+
     return userIds
   }
 }

@@ -1,6 +1,4 @@
 import { Suspense } from "react"
-import { verifySession } from "@/lib/dal"
-import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { ServerListSkeleton } from "@/components/loading/server-skeleton"
@@ -9,6 +7,7 @@ import Link from "next/link"
 import { UserMenu } from "@/components/ui/user-menu"
 import { ServerList } from "@/components/dashboard/server-list"
 import { SessionGuard } from "@/components/auth/session-guard"
+import { verifySession } from "@/lib/dal"
 
 export default async function DashboardPage() {
   const { user } = await verifySession();

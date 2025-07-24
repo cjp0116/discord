@@ -19,7 +19,7 @@ interface ChannelPageProps {
 }
 
 export default async function ChannelPage({ params }: ChannelPageProps) {
-  const { channelId } = await params
+  const { channelId } = await params;
 
   if (!(await canAccessChannel(channelId))) {
     redirect("/dashboard")

@@ -1,10 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import { useServerDetails } from "@/lib/hooks/use-server-details"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { UserPlus, Search } from "lucide-react"
 import { SidebarSkeleton } from "@/components/loading/sidebar-skeleton"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { InviteUsersModal } from "@/components/modals/invite-users-modal"
 
 interface ServerMembersSidebarProps {
   serverId: string
@@ -12,6 +15,7 @@ interface ServerMembersSidebarProps {
 
 export function ServerMembersSidebar({ serverId }: ServerMembersSidebarProps) {
   const { data: serverDetails, loading, error } = useServerDetails(serverId)
+  const [showInviteModal, setShowInviteModal] = useState(false)
 
   if (loading) {
     return <SidebarSkeleton />
@@ -25,7 +29,7 @@ export function ServerMembersSidebar({ serverId }: ServerMembersSidebarProps) {
     )
   }
 
-  const { members } = serverDetails
+  const { members, server } = serverDetails
 
   // Group members by status
   const onlineMembers = members.filter(member => member.users?.status === 'online')
@@ -74,9 +78,21 @@ export function ServerMembersSidebar({ serverId }: ServerMembersSidebarProps) {
           <h3 className="text-sm font-semibold text-muted-foreground">
             Members — {members.length}
           </h3>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-            <UserPlus className="w-4 h-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0"
+                onClick={() => setShowInviteModal(true)}
+              >
+                <UserPlus className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Invite People</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
@@ -134,6 +150,14 @@ export function ServerMembersSidebar({ serverId }: ServerMembersSidebarProps) {
           </div>
         )}
       </div>
+
+      {/* Invite Modal */}
+      <InviteUsersModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        serverName={server.name}
+        inviteCode={server.invite_code}
+      />
     </div>
   )
 } 

@@ -8,6 +8,7 @@ import Link from "next/link"
 import { SidebarSkeleton } from "@/components/loading/sidebar-skeleton"
 import { useSession } from "@/components/providers/session-provider"
 import { usePathname } from "next/navigation"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface ServerSidebarProps {
   serverId: string
@@ -53,11 +54,18 @@ export function ServerSidebar({ serverId }: ServerSidebarProps) {
             <ChevronDown className="w-4 h-4 text-muted-foreground" />
           </div>
           {canManageServer && (
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" asChild>
-              <Link href={`/servers/${serverId}/update`}>
-                <Settings className="w-4 h-4" />
-              </Link>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" asChild>
+                  <Link href={`/servers/${serverId}/update`}>
+                    <Settings className="w-4 h-4" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Server Settings</p>
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -71,11 +79,18 @@ export function ServerSidebar({ serverId }: ServerSidebarProps) {
               <div className="flex items-center justify-between px-2 py-1 text-xs font-semibold text-muted-foreground uppercase">
                 Text Channels
                 {canManageChannels && (
-                  <Link href={`/servers/${serverId}/create-channel`}>
-                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 hover:bg-accent">
-                      +
-                    </Button>
-                  </Link>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link href={`/servers/${serverId}/create-channel`}>
+                        <Button variant="ghost" size="sm" className="h-4 w-4 p-0 hover:bg-accent">
+                          +
+                        </Button>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Create Text Channel</p>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </div>
               {textChannels.map((channel) => (
@@ -91,16 +106,23 @@ export function ServerSidebar({ serverId }: ServerSidebarProps) {
                     <span className="truncate">{channel.name}</span>
                   </Link>
                   {canManageChannels && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      asChild
-                    >
-                      <Link href={`/channels/${channel.id}/settings`}>
-                        <Settings className="w-3 h-3" />
-                      </Link>
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          asChild
+                        >
+                          <Link href={`/channels/${channel.id}/settings`}>
+                            <Settings className="w-3 h-3" />
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Edit Channel</p>
+                      </TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
               ))}
@@ -113,11 +135,18 @@ export function ServerSidebar({ serverId }: ServerSidebarProps) {
               <div className="flex items-center justify-between px-2 py-1 text-xs font-semibold text-muted-foreground uppercase">
                 Voice Channels
                 {canManageChannels && (
-                  <Link href={`/servers/${serverId}/create-channel`}>
-                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 hover:bg-accent">
-                      +
-                    </Button>
-                  </Link>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link href={`/servers/${serverId}/create-channel`}>
+                        <Button variant="ghost" size="sm" className="h-4 w-4 p-0 hover:bg-accent">
+                          +
+                        </Button>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Create Voice Channel</p>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </div>
               {voiceChannels.map((channel) => (
@@ -133,16 +162,23 @@ export function ServerSidebar({ serverId }: ServerSidebarProps) {
                     <span className="truncate">{channel.name}</span>
                   </Link>
                   {canManageChannels && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      asChild
-                    >
-                      <Link href={`/channels/${channel.id}/settings`}>
-                        <Settings className="w-3 h-3" />
-                      </Link>
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          asChild
+                        >
+                          <Link href={`/channels/${channel.id}/settings`}>
+                            <Settings className="w-3 h-3" />
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Edit Channel</p>
+                      </TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
               ))}

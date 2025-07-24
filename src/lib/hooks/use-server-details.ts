@@ -16,6 +16,7 @@ interface Channel {
 
 interface Member {
   id: string
+  user_id: string
   role: string
   users: {
     username: string

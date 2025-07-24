@@ -38,6 +38,7 @@ export default async function ServerPage({ params }: ServerPageProps) {
   return (
     <SessionGuard requireAuth={true}>
       <div className="h-screen bg-gradient-to-br from-background via-purple-50/30 to-pink-50/30 dark:from-background dark:via-purple-950/10 dark:to-pink-950/10 flex">
+        
         <Suspense fallback={<SidebarSkeleton />}>
           <ServerSidebar serverId={serverId} />
         </Suspense>
