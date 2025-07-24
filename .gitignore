@@ -31,8 +31,8 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # cursor
-.cursor/
-.vscode/
+/.cursor/
+/.vscode/
 
 # env files (can opt-in for committing if needed)
 .env*
