@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background-image: linear-gradient(to right, #9796f0, #fbc7d4);
+    /* Light theme - Soft, warm background with purple accents */
+    --background: 0 0% 98%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    /* Primary - Deep purple that complements the gradient */
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 98%;
+    /* Secondary - Soft lavender */
+    --secondary: 262 30% 96%;
+    --secondary-foreground: 262 83% 58%;
+    /* Muted - Warm gray with purple undertones */
+    --muted: 262 15% 94%;
+    --muted-foreground: 262 15% 45%;
+    /* Accent - Soft pink that matches gradient end */
+    --accent: 350 100% 95%;
+    --accent-foreground: 262 83% 58%;
+    /* Destructive - Warm red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    /* Border and input - Soft purple-gray */
+    --border: 262 15% 90%;
+    --input: 262 15% 90%;
+    --ring: 262 83% 58%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark theme - Deep purple-gray background */
+    --background: 262 20% 8%;
+    --foreground: 0 0% 98%;
+    --card: 262 20% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 262 20% 12%;
+    --popover-foreground: 0 0% 98%;
+    /* Primary - Bright purple for dark mode */
+    --primary: 262 83% 70%;
+    --primary-foreground: 262 20% 8%;
+    /* Secondary - Dark purple */
+    --secondary: 262 20% 16%;
+    --secondary-foreground: 0 0% 98%;
+    /* Muted - Dark purple-gray */
+    --muted: 262 20% 16%;
+    --muted-foreground: 262 15% 65%;
+    /* Accent - Dark pink-purple */
+    --accent: 262 20% 16%;
+    --accent-foreground: 262 83% 70%;
+    /* Destructive - Dark red */
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    /* Border and input - Dark purple */
+    --border: 262 20% 20%;
+    --input: 262 20% 20%;
+    --ring: 262 83% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom gradient backgrounds for different elements */
+@layer utilities {
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #9796f0 0%, #fbc7d4 100%);
+  }
+
+  .bg-gradient-secondary {
+    background: linear-gradient(135deg, #e9d5ff 0%, #fce7f3 100%);
+  }
+
+  .bg-gradient-accent {
+    background: linear-gradient(135deg, #f3e8ff 0%, #fdf2f8 100%);
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #9796f0 0%, #fbc7d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Text utilities for better contrast on gradients */
+  .text-on-gradient {
+    @apply text-gray-900 font-medium;
+  }
+
+  .text-on-gradient-light {
+    @apply text-gray-700;
+  }
+
+  .text-on-gradient-white {
+    @apply text-white font-semibold drop-shadow-sm;
+  }
+
+  /* Enhanced gradient with better contrast */
+  .bg-gradient-primary-enhanced {
+    background: linear-gradient(135deg, #9796f0 0%, #fbc7d4 100%);
+    position: relative;
+  }
+
+  .bg-gradient-primary-enhanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+}

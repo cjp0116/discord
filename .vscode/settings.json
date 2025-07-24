@@ -1,0 +1,13 @@
+{
+  "editor.fontFamily": "Lucia Console, Consolas, 'Courier New', monospace",
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "driver": "PostgreSQL",
+      "name": "discord",
+      "group": "discord-db-dev",
+      "connectString": "postgresql://[Whwovlf960116!]:postgres@db.branmzjjibwfunivasmk.supabase.co:5432/discord-db-dev"
+    }
+  ]
+}
