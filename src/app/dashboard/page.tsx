@@ -10,15 +10,23 @@ import { SessionGuard } from "@/components/auth/session-guard"
 import { verifySession } from "@/lib/dal"
 
 export default async function DashboardPage() {
-  const { user } = await verifySession();
+  let user = null;
+  try {
+    const result = await verifySession();
+    user = result.user;
+  } catch (error) {
+    // If verifySession fails, let SessionGuard handle the redirect
+    console.error("Dashboard: verifySession failed:", error);
+  }
+  
   return (
-    <SessionGuard requireAuth={true}>      
+    <SessionGuard requireAuth={true}>
       <div className="min-h-screen bg-gradient-to-br from-background via-purple-50/50 to-pink-50/50 dark:from-background dark:via-purple-950/20 dark:to-pink-950/20">
         <div className="container mx-auto p-6">
           <div className="flex items-center justify-between mb-8">
             <div className="space-y-2">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                Welcome back, {user.display_name || user.username}!
+                Welcome back, {user?.display_name || user?.username || 'User'}!
               </h1>
               <p className="text-muted-foreground text-lg">Choose a server to get started</p>
             </div>

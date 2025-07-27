@@ -189,11 +189,47 @@ export async function updateChannel(channelId: string, prevState: any, formData:
   return { success : true }
 }
 
-export async function deleteChannel(channelId: string) {
+export async function deleteChannel(channelId:string, prevState: any) {
   try {
-    const supabase = await createClient();
-        
-  } catch (error) {
-    
+    await verifySession()
+
+    const supabase = await createClient();  
+    const { data: channelData, error: channelError } = await supabase
+      .from("channels")
+      .select("server_id")
+      .eq("id", channelId)
+      .single()
+
+    if (channelError || !channelData) {
+      return {
+        success: false,
+        errors: { name: ["Channel not found or inaccessible"] },
+      }
+    }
+    let serverId = channelData.server_id
+    // Check if the user has permission to manage this server (owner/admin)
+    if (!(await canManageServer(serverId))) {
+      throw new Error("Unauthorized to delete this channel")
+    }
+
+    await supabase.from("channels").delete().eq("id", channelId);
+    revalidatePath(`/channels`)
+    revalidatePath(`/servers/${serverId}`);
+    revalidatePath('/dashboard');
   }
+  catch (error: any) {
+  if (error.message === "Unauthorized") {
+      return {
+        success: false,
+        errors: { name: ["Unauthorized to delete this channel"] },
+      }
+    }
+    console.error("Delete channel error:", error)
+    return {
+      success: false,
+      errors: { name: ["An unexpected error occurred. Please try again."] },
+    }
+  }
+  redirect(`/servers/${channelData.server_id}`)
+  return { success: true }
 }

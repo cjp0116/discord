@@ -123,7 +123,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setProfile(userProfile)
       } else {
         setProfile(null)
-        router.push("/login")
+        // Only redirect to login if we're not on an auth page
+        const currentPath = window.location.pathname
+        const authRoutes = ['/login', '/signup']
+        if (!authRoutes.includes(currentPath)) {
+          router.push("/login")
+        }
       }
     } catch (error: any) {
       console.error("Session refresh error:", error)
@@ -247,13 +252,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             // Don't refresh router - let the auth state change handle navigation
             break
           case "SIGNED_OUT":
-            router.push("/login")
+            // Only redirect if not already on login page
+            const currentPath = window.location.pathname
+            if (currentPath !== '/login') {
+              router.push("/login")
+            }
             break
           case "TOKEN_REFRESHED":
             // Don't refresh router - just update the session
             break
           case "USER_UPDATED":
             // Don't refresh router - just update the user
+            break
+          default:
+            // For other events, don't redirect
             break
         }
       }

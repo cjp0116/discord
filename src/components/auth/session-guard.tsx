@@ -13,7 +13,7 @@ interface SessionGuardProps {
   redirectTo?: string
 }
 
-export function SessionGuard({ children, requireAuth=true, redirectTo="/login" }: SessionGuardProps) {
+export function SessionGuard({ children, requireAuth = true, redirectTo = "/login" }: SessionGuardProps) {
   const { user, loading } = useSession()
   const router = useRouter()
 
@@ -22,7 +22,11 @@ export function SessionGuard({ children, requireAuth=true, redirectTo="/login" }
       if (requireAuth && !user) {
         router.push(redirectTo)
       } else if (!requireAuth && user) {
-        router.push("/dashboard")
+        // Only redirect if not already on dashboard
+        const currentPath = window.location.pathname
+        if (currentPath !== '/dashboard') {
+          router.push("/dashboard")
+        }
       }
     }
   }, [user, loading, requireAuth, redirectTo, router])

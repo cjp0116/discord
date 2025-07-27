@@ -72,8 +72,11 @@ export async function signUp(prevState: any, formData: FormData) {
     }
   }
 
-  // Redirect outside of try-catch to avoid catching the redirect error
-  redirect("/dashboard")
+  // Return success instead of redirecting - let client handle redirect
+  return {
+    success: true,
+    redirectTo: "/dashboard"
+  }
 }
 
 export async function signIn(prevState: any, formData: FormData) {
@@ -116,8 +119,11 @@ export async function signIn(prevState: any, formData: FormData) {
     }
   }
 
-  // Redirect outside of try-catch to avoid catching the redirect error
-  redirect("/dashboard")
+  // Return success instead of redirecting - let client handle redirect
+  return {
+    success: true,
+    redirectTo: "/dashboard"
+  }
 }
 
 export async function signOut() {

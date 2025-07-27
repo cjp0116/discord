@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { FormError } from "@/components/ui/form"
 import { FadeIn } from "@/components/ui/fade-in"
+import { deleteChannel } from "@/lib/actions/channels"
 
 interface ChannelSettingsFormProps {
   channelId: string
@@ -24,6 +25,7 @@ interface ChannelSettingsFormProps {
 
 export function ChannelSettingsForm({ channelId, initialData }: ChannelSettingsFormProps) {
   const [state, action, isPending] = useActionState(updateChannel.bind(null, channelId), null)
+  const [deleteState, deleteAction, isDeleting] = useActionState(deleteChannel.bind(null, channelId), null)
   const [channelName, setChannelName] = React.useState(initialData.name)
   const [channelTopic, setChannelTopic] = React.useState(initialData.description || "")
   const [slowmode, setSlowmode] = React.useState("off")
@@ -162,12 +164,35 @@ export function ChannelSettingsForm({ channelId, initialData }: ChannelSettingsF
         </div>
       </FadeIn>
 
+      {/* Delete Channel Button */}
+      <FadeIn delay={700}>
+        <form action={deleteAction} className="space-y-4">
+          <Button
+            variant='outline'
+            size='sm'
+            type="submit"
+            className="flex items-center px-3 py-2 text-sm font-medium border-red-600 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-700 rounded-md"
+            disabled={isDeleting}
+            loading={isDeleting}
+            loadingText="Deleting channel..."
+          >
+            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+
+            Delete Channel
+          </Button>
+        </form>
+      </FadeIn >
       {/* Error Display */}
-      {state?.errors && !state.success && (
-        <FadeIn delay={700}>
-          <FormError message="Please check the errors above and try again." />
-        </FadeIn>
-      )}
+      {
+        state?.errors && !state.success && (
+          <FadeIn delay={700}>
+            <FormError message="Please check the errors above and try again." />
+          </FadeIn>
+        )
+      }
     </div>
   )
-} 
+}
+

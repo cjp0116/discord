@@ -8,14 +8,23 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FormField, FormError } from "@/components/ui/form"
 import { Spinner } from "@/components/ui/spinner"
+import { useRouter } from "next/navigation"
 
 export function SignUpForm() {
   const [state, action, isPending] = useActionState(signUp, null)
+  const router = useRouter()
+
   useEffect(() => {
     if (state) {
       console.log('signup form state:', state)
+      if (state.success && state.redirectTo) {
+        // Add a small delay to ensure session state is updated
+        setTimeout(() => {
+          router.push(state.redirectTo)
+        }, 500)
+      }
     }
-  }, [state])
+  }, [state, router])
   return (
     <Card className="w-full max-w-md shadow-xl border-border/50">
       <CardHeader>
