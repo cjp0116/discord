@@ -35,3 +35,6 @@ INSERT WITH CHECK (
     )
   );
 CREATE POLICY "Users can remove their own reactions" ON public.message_reactions FOR DELETE USING (user_id = auth.uid());
+-- Enable real-time replication for message reactions
+ALTER PUBLICATION supabase_realtime
+ADD TABLE public.message_reactions;

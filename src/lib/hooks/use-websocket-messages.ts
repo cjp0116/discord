@@ -32,7 +32,7 @@ interface Message {
 }
 
 export function useWebSocketMessages(channelId: string) {
-  const { user } = useSession()
+  const { user, profile } = useSession()
   const supabase = useMemo(() => createClient(), [])
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
@@ -147,22 +147,171 @@ export function useWebSocketMessages(channelId: string) {
     }
   }, [query.data, query.loading, query.error])
 
-  // Send message via WebSocket
+  // Helper function to process reactions
+  const processReactions = useCallback((messageReactions: any[]) => {
+    const reactionGroups = new Map();
+    messageReactions?.forEach((reaction: any) => {
+      const key = reaction.emoji;
+      if (!reactionGroups.has(key)) {
+        reactionGroups.set(key, {
+          id: reaction.id,
+          emoji: reaction.emoji,
+          count: 0,
+          users: [],
+          hasReacted: false,
+        })
+      }
+
+      const group = reactionGroups.get(key);
+      group.count++;
+      group.users.push(reaction.users);
+      if (reaction.user_id === user?.id) {
+        group.hasReacted = true
+      }
+    })
+    return Array.from(reactionGroups.values())
+  }, [user])
+
+  // Set up Supabase real-time subscription for messages and reactions
+  useEffect(() => {
+    if (!user || !channelId) return
+
+    const channel = supabase
+      .channel(`realtime_messages_${channelId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `channel_id=eq.${channelId}`
+        },
+        (payload: any) => {
+          if (payload.eventType === 'INSERT') {
+            // Fetch the new message with user data
+            supabase
+              .from('messages')
+              .select(`
+                *,
+                users(username, display_name, avatar_url),
+                message_reactions(
+                  id,
+                  emoji,
+                  user_id,
+                  users(id, username, display_name, avatar_url)
+                )
+              `)
+              .eq('id', payload.new.id)
+              .single()
+              .then(({ data }: { data: any }) => {
+                if (data) {
+                  // Process reactions
+                  const processedMessage = {
+                    ...data,
+                    reactions: processReactions(data.message_reactions)
+                  }
+
+                  setMessages(prev => {
+                    // Remove optimistic message and avoid duplicates
+                    const filtered = prev.filter(msg => !msg.id.startsWith('temp-') && msg.id !== data.id)
+                    return [...filtered, processedMessage as Message]
+                  })
+                }
+              })
+          } else if (payload.eventType === 'UPDATE') {
+            // Update existing message
+            supabase
+              .from('messages')
+              .select(`
+                *,
+                users(username, display_name, avatar_url),
+                message_reactions(
+                  id,
+                  emoji,
+                  user_id,
+                  users(id, username, display_name, avatar_url)
+                )
+              `)
+              .eq('id', payload.new.id)
+              .single()
+              .then(({ data }: { data: any }) => {
+                if (data) {
+                  const processedMessage = {
+                    ...data,
+                    reactions: processReactions(data.message_reactions)
+                  }
+
+                  setMessages(prev => prev.map(msg =>
+                    msg.id === data.id ? processedMessage as Message : msg
+                  ))
+                }
+              })
+          } else if (payload.eventType === 'DELETE') {
+            setMessages(prev => prev.filter(msg => msg.id !== payload.old.id))
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'message_reactions'
+        },
+        () => {
+          // Refetch to update reactions
+          query.refetch()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user, channelId, supabase, query, processReactions])
+
+  // Send message via WebSocket or fallback to server action
   const sendMessage = useCallback(async (content: string) => {
+    // Optimistic update - add message immediately to UI
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
+      content,
+      created_at: new Date().toISOString(),
+      edited_at: null,
+      user_id: user?.id || '',
+      users: {
+        username: profile?.username || '',
+        display_name: profile?.display_name || null,
+        avatar_url: profile?.avatar_url || null,
+      },
+      reactions: []
+    }
+
+    setMessages(prev => [...prev, optimisticMessage])
+
     if (!isConnected || !isAuthenticated) {
       // Fallback to server action if WebSocket not available
       const { sendMessage: serverSendMessage } = await import('@/lib/actions/messages')
       const result = await serverSendMessage(channelId, content)
-      if (result.success) {
-        // Refetch messages to get the new message
-        query.refetch()
+
+      if (!result.success) {
+        // Remove optimistic message on failure
+        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
       }
+      // Note: Supabase realtime will handle adding the actual message
+
       return result
     }
 
     const success = wsSendMessage(content, channelId)
+    if (!success) {
+      // Remove optimistic message on failure
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
+    }
+    // Note: WebSocket or Supabase realtime will handle adding the actual message
+
     return { success }
-  }, [isConnected, isAuthenticated, wsSendMessage, channelId, query])
+  }, [isConnected, isAuthenticated, wsSendMessage, channelId, user, profile])
 
   // Edit message via WebSocket
   const editMessage = useCallback(async (messageId: string, content: string) => {
