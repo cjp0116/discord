@@ -4,8 +4,6 @@ import { useCallback, useMemo, useEffect, useState } from "react"
 import { useCachedQuery } from "@/lib/hooks/use-cached-query"
 import { createClient } from "@/lib/supabase/client"
 import { useSession } from "@/components/providers/session-provider"
-import { useWebSocket } from "@/lib/websocket/client"
-import { ChatMessage } from "@/lib/websocket/server"
 
 interface Message {
   id: string
@@ -37,37 +35,7 @@ export function useWebSocketMessages(channelId: string) {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  // WebSocket hook
-  const {
-    isConnected,
-    isAuthenticated,
-    sendMessage: wsSendMessage,
-    editMessage: wsEditMessage,
-    deleteMessage: wsDeleteMessage,
-    addReaction: wsAddReaction
-  } = useWebSocket({
-    channelId,
-    onMessageReceived: useCallback((message: ChatMessage) => {
-      setMessages(prev => [...prev, message as Message])
-    }, []),
-    onMessageEdited: useCallback((message: ChatMessage) => {
-      setMessages(prev => prev.map(msg =>
-        msg.id === message.id ? { ...msg, ...message } : msg
-      ))
-    }, []),
-    onMessageDeleted: useCallback((messageId: string) => {
-      setMessages(prev => prev.filter(msg => msg.id !== messageId))
-    }, []),
-    onReactionUpdated: useCallback((messageId: string, reactions: any[]) => {
-      setMessages(prev => prev.map(msg =>
-        msg.id === messageId ? { ...msg, reactions } : msg
-      ))
-    }, []),
-    onError: useCallback((error: string) => {
-      setError(error)
-    }, [])
-  })
+  const [isConnected, setIsConnected] = useState(false)
 
   // Stable query function for initial load
   const queryFn = useCallback(async () => {
@@ -263,14 +231,21 @@ export function useWebSocketMessages(channelId: string) {
           query.refetch()
         }
       )
-      .subscribe()
+      .subscribe((status: string) => {
+        if (status === 'SUBSCRIBED') {
+          setIsConnected(true)
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          setIsConnected(false)
+        }
+      })
 
     return () => {
       supabase.removeChannel(channel)
+      setIsConnected(false)
     }
   }, [user, channelId, supabase, query, processReactions])
 
-  // Send message via WebSocket or fallback to server action
+  // Send message via server action
   const sendMessage = useCallback(async (content: string) => {
     // Optimistic update - add message immediately to UI
     const optimisticMessage: Message = {
@@ -289,82 +264,46 @@ export function useWebSocketMessages(channelId: string) {
 
     setMessages(prev => [...prev, optimisticMessage])
 
-    if (!isConnected || !isAuthenticated) {
-      // Fallback to server action if WebSocket not available
-      const { sendMessage: serverSendMessage } = await import('@/lib/actions/messages')
-      const result = await serverSendMessage(channelId, content)
+    // Use server action to send message
+    const { sendMessage: serverSendMessage } = await import('@/lib/actions/messages')
+    const result = await serverSendMessage(channelId, content)
 
-      if (!result.success) {
-        // Remove optimistic message on failure
-        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
-      }
-      // Note: Supabase realtime will handle adding the actual message
-
-      return result
-    }
-
-    const success = wsSendMessage(content, channelId)
-    if (!success) {
+    if (!result.success) {
       // Remove optimistic message on failure
       setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
     }
-    // Note: WebSocket or Supabase realtime will handle adding the actual message
+    // Note: Supabase realtime will handle adding the actual message
 
-    return { success }
-  }, [isConnected, isAuthenticated, wsSendMessage, channelId, user, profile])
+    return result
+  }, [channelId, user, profile])
 
-  // Edit message via WebSocket
+  // Edit message via server action
   const editMessage = useCallback(async (messageId: string, content: string) => {
-    if (!isConnected || !isAuthenticated) {
-      // Fallback to server action if WebSocket not available
-      const { editMessage: serverEditMessage } = await import('@/lib/actions/messages')
-      const result = await serverEditMessage(messageId, content)
-      if (result.success) {
-        // Refetch messages to get the updated message
-        query.refetch()
-      }
-      return result
-    }
+    const { editMessage: serverEditMessage } = await import('@/lib/actions/messages')
+    const result = await serverEditMessage(messageId, content)
+    // Note: Supabase realtime will handle updating the message in the UI
+    return result
+  }, [])
 
-    const success = wsEditMessage(messageId, content, channelId)
-    return { success }
-  }, [isConnected, isAuthenticated, wsEditMessage, channelId, query])
-
-  // Delete message via WebSocket
+  // Delete message via server action
   const deleteMessage = useCallback(async (messageId: string) => {
-    if (!isConnected || !isAuthenticated) {
-      // Fallback to server action if WebSocket not available
-      const { deleteMessage: serverDeleteMessage } = await import('@/lib/actions/messages')
-      try {
-        await serverDeleteMessage(messageId)
-        // Refetch messages to get the updated list
-        query.refetch()
-        return { success: true }
-      } catch (error: any) {
-        return { success: false, error: error.message }
-      }
+    const { deleteMessage: serverDeleteMessage } = await import('@/lib/actions/messages')
+    try {
+      await serverDeleteMessage(messageId)
+      // Note: Supabase realtime will handle removing the message from the UI
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
     }
+  }, [])
 
-    const success = wsDeleteMessage(messageId, channelId)
-    return { success }
-  }, [isConnected, isAuthenticated, wsDeleteMessage, channelId, query])
-
-  // Add reaction via WebSocket
+  // Add reaction via server action
   const addReaction = useCallback(async (messageId: string, emoji: string) => {
-    if (!isConnected || !isAuthenticated) {
-      // Fallback to server action if WebSocket not available
-      const { addReaction: serverAddReaction } = await import('@/lib/actions/reactions')
-      const result = await serverAddReaction(messageId, emoji)
-      if (result.success) {
-        // Refetch messages to get the updated reactions
-        query.refetch()
-      }
-      return result
-    }
-
-    const success = wsAddReaction(messageId, emoji, channelId)
-    return { success }
-  }, [isConnected, isAuthenticated, wsAddReaction, channelId, query])
+    const { addReaction: serverAddReaction } = await import('@/lib/actions/reactions')
+    const result = await serverAddReaction(messageId, emoji)
+    // Note: Supabase realtime will handle updating the reactions in the UI
+    return result
+  }, [])
 
   // Refetch function
   const refetch = useCallback(() => {
@@ -376,7 +315,7 @@ export function useWebSocketMessages(channelId: string) {
     loading,
     error,
     isConnected,
-    isAuthenticated,
+    isAuthenticated: isConnected, // For backwards compatibility with existing components
     sendMessage,
     editMessage,
     deleteMessage,
